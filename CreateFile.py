@@ -1,23 +1,27 @@
-import json
-import requests
-from bs4 import BeautifulSoup
+def Json(request:dict, filename:str)->None:
+    import json
+    with open(filename, "w") as outfile:
+        json.dump(request, outfile, indent=4, ensure_ascii=False)
 
-def Json(url:str, filename:str)->None:
-    requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS = 'ALL:@SECLEVEL=1'
-    page = requests.get(url, verify=False)
-    try:
-        if page.ok:
-            soup = BeautifulSoup(page.text, 'lxml')
-            dicTable = {}
-            for Table in soup.find_all("tbody", class_="ui-datatable-data ui-widget-content"):
-                dicRows = {}
-                for Row in Table.children:
-                    try:
-                        dicRows[Row.find("span").text] = Row.text.replace(Row.find("span").text, "")
-                        dicTable[Table.parent.parent.parent.parent.parent.parent.parent.parent.parent.find("li").text] = dicRows
-                    except:
-                        pass
-            with open(filename, "w") as outfile:
-                json.dump(dicTable, outfile, indent=4, ensure_ascii=False)
-    except requests.exceptions.ConnectionError as exc:
-        print(exc)
+def Excel(request:dict, filename:str, orientation="horizontal")->None:
+    import xlsxwriter
+    workbook = xlsxwriter.Workbook(filename)
+    worksheet = workbook.add_worksheet()
+
+    if orientation == "horizontal":
+        j=0
+        for table in request.keys():
+            for key, value in request[table].items():
+                worksheet.write(0, j, key.replace(":", ""))
+                worksheet.write(1, j, value)
+                j+=1
+
+    if orientation == "vertical":
+        i=0
+        for table in request.keys():
+            for key, value in request[table].items():
+                worksheet.write(i, 0, key.replace(":", ""))
+                worksheet.write(i, 1, value)
+                i+=1
+
+    workbook.close()
